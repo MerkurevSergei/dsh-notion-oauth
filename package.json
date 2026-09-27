@@ -1,6 +1,6 @@
 {
   "name": "dsh-notion-oauth",
-  "version": "0.2.11",
+  "version": "0.2.12",
   "description": "Connect Notion through the official Notion MCP with OAuth 2.0 and PKCE — GUI sign-in, no integration token required.",
   "icon": "./icon.svg",
   "type": "module",
@@ -11,6 +11,7 @@
   "exports": {
     ".": "./lib/index.js",
     "./client": "./lib/client.js",
+    "./locale/*.json": "./locale/*.json",
     "./package.json": "./package.json"
   },
   "files": ["lib", "src", "locale", "icon.svg", "cordis.patch.yml", "README.md", "README.zh.md", "LICENSE"],
@@ -45,6 +46,7 @@
   },
   "keywords": ["dsh", "dsh-plugin", "notion", "mcp", "oauth", "deepseek-harness"]
 }
+
 
 
 
