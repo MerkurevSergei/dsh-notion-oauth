@@ -153,10 +153,14 @@ export function apply(ctx: Context, config: any) {
 
   // --- loopback-fenced routes (status / login / logout) ---
   //
-  // Every route is pinned to one method, and the two state-changing ones demand
-  // an explicit same-origin `Origin` instead of tolerating its absence: a
-  // cross-site GET without `Origin` (an <img>, a navigation) must never reach
-  // login or logout, and `Sec-Fetch-Site` alone is not sent by every client.
+  // The Desktop shell proxies renderer requests and strips `Origin` and
+  // `Sec-Fetch-Site` before forwarding to the host, so a legitimate GUI call
+  // arrives loopback-only, same-Host, and *without* those headers. An absent
+  // `Origin` therefore cannot be treated as hostile. The cases that matter:
+  //   * `Origin` present -> must be the app itself or the same host;
+  //   * `Sec-Fetch-Site: cross-site` -> refused (plain web UI);
+  //   * POST -> must be `application/json`, which is not a CORS-simple value,
+  //     so a cross-site caller needs a preflight that these routes reject.
   function isTrustedRequest(req: IncomingMessage, method: 'GET' | 'POST'): boolean {
     if (req.method !== method) return false;
 
@@ -177,15 +181,20 @@ export function apply(ctx: Context, config: any) {
     if (req.headers['sec-fetch-site'] === 'cross-site') return false;
 
     const origin = req.headers.origin;
-    if (origin === undefined) {
-      // Safe reads may omit it; anything that changes state may not.
-      return method === 'GET';
+    if (origin !== undefined && origin !== 'dsh-app://app') {
+      try {
+        if (new URL(origin).host !== hostUrl.host) return false;
+      } catch {
+        return false;
+      }
     }
-    try {
-      return new URL(origin).host === hostUrl.host;
-    } catch {
-      return false;
+
+    if (method === 'POST') {
+      const contentType = req.headers['content-type'];
+      if (typeof contentType !== 'string' || !/^application\/json\b/i.test(contentType)) return false;
     }
+
+    return true;
   }
 
   function writeJson(res: ServerResponse, status: number, value: unknown) {

@@ -38,9 +38,13 @@ dsh plugin --profile <name> add dsh-notion-oauth
 - **Loopback-only control routes.** The Settings page talks to
   `/api/dsh-notion-oauth/{status,login,logout}`. Each route is pinned to one HTTP
   method (`GET /status`, `POST /login`, `POST /logout`) and accepts only requests
-  whose remote address and `Host` are loopback, that are not `Sec-Fetch-Site:
-  cross-site`, and — for the state-changing routes — that carry an explicit
-  same-origin `Origin`. A cross-site page cannot start or cancel a login.
+  whose remote address and `Host` are loopback and that are not `Sec-Fetch-Site:
+  cross-site`. When an `Origin` is present it must be the app itself
+  (`dsh-app://app`) or the same host. The Desktop shell proxies renderer calls and
+  strips `Origin`/`Sec-Fetch-Site`, so an absent `Origin` is normal; the two POST
+  routes therefore additionally require `Content-Type: application/json` — not a
+  CORS-simple value, so a cross-site caller first needs a preflight that these
+  routes reject.
 - **OAuth hardening.** Authorization code + PKCE (S256), a per-flow `state` the
   callback server verifies, and a 10-minute deadline on the callback. A malformed
   or forged callback is answered with 400 and leaves the pending login running,
