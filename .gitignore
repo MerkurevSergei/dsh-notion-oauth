@@ -1,3 +1,6 @@
 node_modules/
+lib/
 *.tgz
 package.json.bak
+*.log
+.DS_Store

@@ -1,0 +1,14 @@
+# pnpm settings. Since pnpm 10/11 these live here rather than in package.json's
+# `pnpm` field, which is no longer read.
+#
+# esbuild is the only dependency allowed to run install scripts. Its platform
+# binary normally arrives through the optional @esbuild/<platform> package, but
+# leaving the script unapproved makes `pnpm install` fail.
+#
+# Both spellings are declared so the setting works with the pnpm build bundled
+# with DeepSeek Harness (`allowBuilds`) and with upstream pnpm
+# (`onlyBuiltDependencies`).
+allowBuilds:
+  esbuild: true
+onlyBuiltDependencies:
+  - esbuild

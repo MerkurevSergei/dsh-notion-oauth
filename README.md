@@ -61,6 +61,22 @@ dsh plugin --profile <name> add dsh-notion-oauth
   `DEEPSEEK_API_KEY`, …), not just its own. The token is never exposed to the
   browser half, never returned by an HTTP route, and never written to logs.
 
+## Development
+
+```sh
+pnpm install      # installs dev dependencies and builds lib/ via the prepare hook
+pnpm run build    # rebuilds lib/index.js (host) and lib/client.js (browser half)
+```
+
+`lib/` is build output and is not committed; `pnpm install` and `pnpm pack`
+regenerate it through the `prepare` script.
+
+`pnpm run typecheck` checks the sources against the DSH host packages
+(`@deepseek-ai/*`). DeepSeek Harness provides those at runtime, and their npm
+publication is currently incomplete — some transitive packages are missing from
+the registry — so typechecking needs an environment that supplies them. The
+build itself has no such dependency.
+
 ## License
 
 MIT. Reuses code/patterns from `dsh-notion-mcp` and `dsh-notion-connector` (both MIT).

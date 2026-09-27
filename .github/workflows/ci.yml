@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Version comes from package.json's `packageManager` field.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Builds lib/index.js (host) and lib/client.js (browser half). Kept as a
+      # separate step so a build failure is distinguishable from install.
+      - run: pnpm run build
+
+      - name: Verify build output
+        run: test -f lib/index.js && test -f lib/client.js
