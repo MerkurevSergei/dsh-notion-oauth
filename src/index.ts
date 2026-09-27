@@ -52,12 +52,15 @@ export function apply(ctx: Context, config: any) {
   const slot: { child?: { dispose(): void } } = {};
   let pending: PendingLogin | undefined;
   let activeLoginClose: (() => void) | undefined;
+  let mounted = false;
+  let refreshTimer: ReturnType<typeof setTimeout> | undefined;
 
   function unmount() {
     if (slot.child) {
       slot.child.dispose();
       slot.child = undefined;
     }
+    mounted = false;
   }
 
   function mount(accessToken: string) {
@@ -70,6 +73,31 @@ export function apply(ctx: Context, config: any) {
       toolCallTimeoutMs: 60_000,
       failOnStartupError: false,
     }) as any;
+    mounted = true;
+  }
+
+  function scheduleRefresh(expiresAt: number): void {
+    if (refreshTimer !== undefined) clearTimeout(refreshTimer);
+    // Refresh ~5 minutes before expiry, never sooner than 30s from now.
+    const delay = Math.max(30_000, expiresAt - Date.now() - 5 * 60_000);
+    refreshTimer = setTimeout(async () => {
+      try {
+        await refreshAndMount();
+        const t = await store.load();
+        if (t) scheduleRefresh(t.expiresAt);
+      } catch (e) {
+        console.error('[dsh-notion-oauth] refresh failed:', e);
+        // Retry soon; an invalid_grant already cleared the store and unmounted.
+        const t = await store.load();
+        if (t) scheduleRefresh(Date.now() + 60_000);
+      }
+    }, delay);
+    (refreshTimer as any).unref?.();
+  }
+
+  function mountAndSchedule(accessToken: string, expiresAt: number): void {
+    mount(accessToken);
+    scheduleRefresh(expiresAt);
   }
 
   async function refreshAndMount(): Promise<void> {
@@ -97,7 +125,7 @@ export function apply(ctx: Context, config: any) {
       clientId: tokens.clientId,
     };
     await store.save(refreshed);
-    mount(refreshed.accessToken);
+    mountAndSchedule(refreshed.accessToken, refreshed.expiresAt);
   }
 
   async function completePending(code: string): Promise<void> {
@@ -117,7 +145,7 @@ export function apply(ctx: Context, config: any) {
       clientId,
     };
     await store.save(stored);
-    mount(stored.accessToken);
+    mountAndSchedule(stored.accessToken, stored.expiresAt);
   }
 
   async function beginLogin(): Promise<{ url: string; done: Promise<void> }> {
@@ -212,7 +240,12 @@ export function apply(ctx: Context, config: any) {
           return;
         }
         const tokens = await store.load();
-        writeJson(res, 200, { connected: !!tokens });
+        const expiresAt = tokens?.expiresAt ?? null;
+        writeJson(res, 200, {
+          connected: mounted && expiresAt !== null && expiresAt > Date.now(),
+          mounted,
+          expiresAt,
+        });
       },
     },
     {
@@ -285,7 +318,7 @@ export function apply(ctx: Context, config: any) {
         const tokens = await store.load();
         if (!tokens) return;
         if (tokens.expiresAt > Date.now() + 60_000) {
-          mount(tokens.accessToken);
+          mountAndSchedule(tokens.accessToken, tokens.expiresAt);
         } else {
           await refreshAndMount();
         }

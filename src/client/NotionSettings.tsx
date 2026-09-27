@@ -1,12 +1,15 @@
-// Notion OAuth settings page: Login / Logout + connection status.
+// Notion OAuth settings page: Login / Logout + live connection status.
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
 
 const API = '/api/dsh-notion-oauth';
+const POLL_MS = 4000;
 
 interface Status {
   connected: boolean;
+  mounted: boolean;
+  expiresAt: number | null;
 }
 
 async function api<T>(path: string, body?: unknown): Promise<T> {
@@ -17,6 +20,15 @@ async function api<T>(path: string, body?: unknown): Promise<T> {
   });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   return (await response.json()) as T;
+}
+
+function formatExpiry(expiresAt: number | null, now: number): string {
+  if (expiresAt === null) return '';
+  const ms = expiresAt - now;
+  if (ms <= 0) return '· токен истёк — ждём автообновление';
+  const m = Math.floor(ms / 60000);
+  const s = Math.floor((ms % 60000) / 1000);
+  return `· истекает через ${m} мин ${s} с`;
 }
 
 const styles: Record<string, CSSProperties> = {
@@ -34,26 +46,40 @@ const styles: Record<string, CSSProperties> = {
 };
 
 export function NotionSettings() {
-  const [connected, setConnected] = useState<boolean | null>(null);
+  const [status, setStatus] = useState<Status | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
-  const pollRef = useRef<number | undefined>(undefined);
+  const [now, setNow] = useState(() => Date.now());
+
+  const connected = status?.connected ?? false;
 
   const refresh = useCallback(async () => {
     try {
-      const s = await api<Status>('/status');
-      setConnected(s.connected);
+      setStatus(await api<Status>('/status'));
     } catch {
-      /* status endpoint unavailable — leave unchanged */
+      /* endpoint unavailable — leave unchanged */
     }
   }, []);
 
+  // Live status: poll on a cadence, plus a 1s ticker so the expiry countdown
+  // feels real. The page also auto-reflects a background token refresh.
   useEffect(() => {
     refresh();
+    const poll = window.setInterval(refresh, POLL_MS);
+    const tick = window.setInterval(() => setNow(Date.now()), 1000);
     return () => {
-      if (pollRef.current !== undefined) window.clearInterval(pollRef.current);
+      window.clearInterval(poll);
+      window.clearInterval(tick);
     };
   }, [refresh]);
+
+  // When the poll observes a successful login, settle the busy state.
+  useEffect(() => {
+    if (connected && busy) {
+      setBusy(false);
+      setMessage({ kind: 'ok', text: 'Подключено ✓' });
+    }
+  }, [connected, busy]);
 
   const login = useCallback(async () => {
     setBusy(true);
@@ -62,27 +88,7 @@ export function NotionSettings() {
       const r = await api<{ ok: boolean; url?: string; error?: string }>('/login', {});
       if (!r.ok || !r.url) throw new Error(r.error ?? 'login failed');
       window.open(r.url, '_blank');
-      setMessage({ kind: 'ok', text: 'Браузер открыт — подтвердите доступ к Notion и дождитесь подключения…' });
-      const deadline = Date.now() + 180_000;
-      if (pollRef.current !== undefined) window.clearInterval(pollRef.current);
-      pollRef.current = window.setInterval(async () => {
-        let s: Status | null = null;
-        try {
-          s = await api<Status>('/status');
-        } catch {
-          /* ignore transient errors */
-        }
-        if (s?.connected) {
-          if (pollRef.current !== undefined) window.clearInterval(pollRef.current);
-          setConnected(true);
-          setMessage({ kind: 'ok', text: 'Подключено ✓' });
-          setBusy(false);
-        } else if (Date.now() > deadline) {
-          if (pollRef.current !== undefined) window.clearInterval(pollRef.current);
-          setBusy(false);
-          setMessage({ kind: 'err', text: 'Не дождались авторизации — попробуйте ещё раз.' });
-        }
-      }, 1500);
+      setMessage({ kind: 'ok', text: 'Браузер открыт — подтвердите доступ к Notion…' });
     } catch (e) {
       setBusy(false);
       setMessage({ kind: 'err', text: e instanceof Error ? e.message : String(e) });
@@ -93,23 +99,25 @@ export function NotionSettings() {
     setBusy(true);
     try {
       await api<{ ok: boolean }>('/logout', {});
-      setConnected(false);
+      await refresh();
       setMessage({ kind: 'ok', text: 'Отключено' });
     } catch (e) {
       setMessage({ kind: 'err', text: e instanceof Error ? e.message : String(e) });
     } finally {
       setBusy(false);
     }
-  }, []);
+  }, [refresh]);
+
+  const expiryText = formatExpiry(status?.expiresAt ?? null, now);
 
   return (
     <div style={styles.page}>
       <h2 style={styles.title}>Notion (OAuth)</h2>
       <div style={styles.status}>
-        {connected === null
+        {status === null
           ? <span>Проверка…</span>
           : connected
-            ? <span style={styles.ok}>Подключено</span>
+            ? <span style={styles.ok}>Подключено{expiryText}</span>
             : <span style={styles.err}>Не подключено</span>}
       </div>
       <div style={styles.row}>
@@ -138,6 +146,7 @@ export function NotionSettings() {
       <div style={styles.hint}>
         <p style={styles.hintP}>Авторизация через официальный Notion MCP (OAuth) — без токенов интеграций. Права берутся из вашего аккаунта Notion.</p>
         <p style={styles.hintP}>После входа становятся доступны инструменты mcp__notion__* (поиск, чтение и создание страниц, базы данных).</p>
+        <p style={styles.hintP}>Токен обновляется автоматически; статус и срок действия обновляются на этой странице.</p>
       </div>
     </div>
   );
