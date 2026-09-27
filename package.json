@@ -1,6 +1,6 @@
 {
   "name": "dsh-notion-oauth-ui",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Connect Notion from the GUI with OAuth 2.0 + PKCE — official Notion MCP, no integration token.",
   "icon": "./icon.svg",
   "type": "module",
