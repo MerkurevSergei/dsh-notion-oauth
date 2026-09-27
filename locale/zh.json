@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Notion",
-    "description": "通过官方 Notion MCP 以 OAuth 2.0 + PKCE 连接 Notion —— 在图形界面一键登录，无需集成令牌。"
+    "description": "通过官方 Notion MCP 以 OAuth 2.0 + PKCE 连接 Notion。"
   }
 }

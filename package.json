@@ -1,7 +1,7 @@
 {
   "name": "dsh-notion-oauth",
   "version": "1.0.0",
-  "description": "Connect Notion through the official Notion MCP with OAuth 2.0 and PKCE — GUI sign-in, no integration token required.",
+  "description": "Connect Notion through the official Notion MCP with OAuth 2.0 and PKCE.",
   "icon": "./icon.svg",
   "type": "module",
   "license": "MIT",
