@@ -12,21 +12,27 @@
 
 ## 安装与登录
 
-**1. 安装** —— 侧边栏 → **Plugins** → **Add plugin** → `dsh-notion-oauth-ui` → **Install**。
+**1. 安装** —— 侧边栏打开 **Plugins**，点击 **Add plugin**，输入 `dsh-notion-oauth-ui` 后按 **Install**。
 
-![在 DSH 插件页添加插件](assets/setup-1-install.png)
+![侧边栏中要点击的位置](assets/setup-1-sidebar.png)
 
-**2. 登录** —— 设置 → **Notion** → **Login**。
+![已填写包名的 Add plugin 对话框](assets/setup-2-install.png)
 
-![带 Login 按钮的 Notion 设置页](assets/setup-2-login.png)
+**2. 打开设置** —— 侧边栏底部的齿轮，或按 `Ctrl + ,`。
 
-**3. 授权** —— 浏览器会打开 Notion：选择工作区并点击 **Continue**。
+![从侧边栏打开设置](assets/setup-3-settings.png)
 
-![Notion 授权页面](assets/setup-3-approve.png)
+**3. 登录** —— 打开 **Notion** 并点击 **Login**。
 
-**4. 完成** —— 页面变为 **Connected**，`mcp__notion__*` 工具随即可用。
+![带 Login 按钮的 Notion 页面](assets/setup-4-notion.png)
 
-![显示 Connected 的 Notion 设置页](assets/setup-4-connected.png)
+**4. 授权** —— 浏览器会打开 Notion 授权页：选择工作区，勾选 **I recognize and trust this URL**，然后点击 **Continue**。
+
+![Notion 授权页](assets/setup-5-approve.png)
+
+**5. 完成** —— 页面变为 **Connected**，`mcp__notion__*` 工具随即可用。
+
+![显示 Connected 的 Notion 页面](assets/setup-6-connected.png)
 
 headless 或仅 CLI 的配置，可以在终端走同一条流程：
 
