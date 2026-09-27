@@ -5,10 +5,10 @@
 ## 特性
 
 - **GUI 一键登录** —— 设置页中的「Notion」页面提供一键 Login，无需终端、无需 Integration Token。
-- **CLI 备选** —— `dsh notion login` 适用于 headless / CLI 配置。
 - **OAuth + PKCE** —— 动态客户端注册（RFC 7591），无需复制 `client_id` 或密钥。
 - **静默刷新** —— access token 自动刷新，refresh token 原子轮换。
 - **工具以 `mcp__notion__*` 挂载** —— 通过官方 MCP 服务器搜索、读取/创建页面、数据库与评论。
+- **CLI 备选** —— `dsh notion login` 适用于 headless / CLI 配置。
 
 ## 安装与登录
 

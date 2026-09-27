@@ -5,10 +5,10 @@ Connect Notion from the [DeepSeek Harness](https://github.com/deepseek-ai/deepse
 ## Features
 
 - **GUI login** — a "Notion" page under Settings with a one-click Login (no terminal, no Integration Token).
-- **CLI fallback** — `dsh notion login` for headless / CLI profiles.
 - **OAuth + PKCE** — dynamic client registration (RFC 7591), no `client_id`/secret to copy.
 - **Silent refresh** — access token refreshed automatically; refresh token rotated atomically.
 - **Tools as `mcp__notion__*`** — search, read/create pages, databases, comments via the official MCP server.
+- **CLI fallback** — `dsh notion login` for headless / CLI profiles.
 
 ## Setup
 
