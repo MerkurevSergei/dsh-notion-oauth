@@ -203,22 +203,15 @@ export function apply(ctx: Context, config: any) {
     },
   ];
 
-  // Register the settings routes only when a web server is present (web/desktop
-  // profiles). Headless profiles still get the CLI `notion login` command.
-  let webServer: any = null;
-  try {
-    webServer = (ctx as any).get?.('webServer') ?? (ctx as any).webServer;
-  } catch {
-    webServer = null;
-  }
-  if (webServer?.register) {
-    ctx.effect(() => {
-      const disposers = routes.map((r: any) => webServer.register(r));
-      return () => {
-        for (const d of disposers) (d as any)?.();
-      };
-    });
-  }
+  // Register the settings routes once a web server is available (web/desktop
+  // profiles). Headless profiles never provide one, so the CLI `notion login`
+  // command keeps working there without the routes.
+  ctx.inject(['webServer'], (ctx: any) => {
+    const disposers = routes.map((r: any) => ctx.webServer.register(r));
+    return () => {
+      for (const d of disposers) d?.();
+    };
+  });
 
   // --- CLI command (fallback) ---
   const isNotionCommand = (ctx.cmdlineArgs?.get?.() ?? [])[0] === 'notion';
