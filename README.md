@@ -24,7 +24,7 @@ Connect Notion from the [DeepSeek Harness](https://github.com/deepseek-ai/deepse
 
 **3. Sign in** — open **Notion** and press **Login**.
 
-![The Notion page with the Login button](assets/setup-4.png)
+![The Notion entry in Settings, with the Login button](assets/setup-4.png)
 
 **4. Approve** — the browser opens the Notion consent page: pick a workspace, tick the **I recognize and trust this URL** checkbox, then press **Continue**.
 

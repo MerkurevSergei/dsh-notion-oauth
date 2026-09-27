@@ -24,7 +24,7 @@
 
 **3. 登录** —— 打开 **Notion** 并点击 **Login**。
 
-![带 Login 按钮的 Notion 页面](assets/setup-4.png)
+![设置中的 Notion 项与 Login 按钮](assets/setup-4.png)
 
 **4. 授权** —— 浏览器会打开 Notion 授权页：选择工作区，勾选 **I recognize and trust this URL**，然后点击 **Continue**。
 
