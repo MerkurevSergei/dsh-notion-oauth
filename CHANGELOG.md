@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.1
+
+- Releases are now published from GitHub Actions through npm Trusted Publishing:
+  OIDC instead of a stored token, with a provenance attestation on the published
+  version. No functional changes.
+
 ## 1.0.0
 
 First stable release.
