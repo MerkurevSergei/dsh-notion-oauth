@@ -32,8 +32,8 @@ dsh plugin --profile <name> add dsh-notion-oauth
 |---|---|---|
 | `mcpUrl` | `https://mcp.notion.com/mcp` | Notion MCP 服务器 URL |
 | `port` | `53007` | 本地 OAuth 回调端口（`127.0.0.1`） |
-| `refreshLeadMs` | `14400000`（4 小时） | 在令牌到期前提前这么久刷新 |
-| `refreshRetryMs` | `600000`（10 分钟） | 刷新失败时的重试间隔 |
+| `refreshLeadMs` | `300000`（5 分钟） | 在令牌到期前提前这么久刷新 |
+| `refreshRetryMs` | `60000`（1 分钟） | 刷新失败时的重试间隔 |
 
 ## 安全
 

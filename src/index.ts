@@ -29,8 +29,8 @@ export const inject = ['credentials', 'cmdlineArgs'];
 export const Config = z.object({
   mcpUrl: z.string().default('https://mcp.notion.com/mcp'),
   port: z.number().default(53007),
-  refreshLeadMs: z.number().default(4 * 60 * 60 * 1000),
-  refreshRetryMs: z.number().default(10 * 60 * 1000),
+  refreshLeadMs: z.number().default(5 * 60 * 1000),
+  refreshRetryMs: z.number().default(60 * 1000),
 });
 
 const API_PREFIX = '/api/dsh-notion-oauth';

@@ -1,6 +1,6 @@
 {
   "name": "dsh-notion-oauth",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Notion integration for DeepSeek Harness via the official Notion MCP (OAuth 2.0 + PKCE) with a GUI login page and a CLI `dsh notion login` fallback. · DSH 的 Notion 集成插件（OAuth 2.0 + PKCE），支持 GUI 一键登录与命令行授权。",
   "type": "module",
   "license": "MIT",
@@ -42,6 +42,7 @@
   },
   "keywords": ["dsh", "dsh-plugin", "notion", "mcp", "oauth", "deepseek-harness"]
 }
+
 
 
 
