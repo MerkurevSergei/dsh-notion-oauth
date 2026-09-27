@@ -12,21 +12,27 @@ Connect Notion from the [DeepSeek Harness](https://github.com/deepseek-ai/deepse
 
 ## Setup
 
-**1. Install** — sidebar → **Plugins** → **Add plugin** → `dsh-notion-oauth-ui` → **Install**.
+**1. Install** — open **Plugins** in the sidebar, then **Add plugin**, enter `dsh-notion-oauth-ui` and press **Install**.
 
-![Adding the plugin in the DSH Plugins page](assets/setup-1-install.png)
+![Where to click in the sidebar](assets/setup-1-sidebar.png)
 
-**2. Sign in** — Settings → **Notion** → **Login**.
+![The Add plugin dialog with the package name entered](assets/setup-2-install.png)
 
-![The Notion settings page with the Login button](assets/setup-2-login.png)
+**2. Open Settings** — the gear at the bottom of the sidebar, or `Ctrl + ,`.
 
-**3. Approve** — your browser opens Notion: pick a workspace and press **Continue**.
+![Opening Settings from the sidebar](assets/setup-3-settings.png)
 
-![The Notion authorization page](assets/setup-3-approve.png)
+**3. Sign in** — open **Notion** and press **Login**.
 
-**4. Done** — the page switches to **Connected**, and the `mcp__notion__*` tools become available.
+![The Notion page with the Login button](assets/setup-4-notion.png)
 
-![The Notion settings page showing Connected](assets/setup-4-connected.png)
+**4. Approve** — the browser opens the Notion consent page: pick a workspace, tick the **I recognize and trust this URL** checkbox, then press **Continue**.
+
+![The Notion consent page](assets/setup-5-approve.png)
+
+**5. Done** — the page switches to **Connected**, and the `mcp__notion__*` tools become available.
+
+![The Notion page showing Connected](assets/setup-6-connected.png)
 
 On a headless or CLI-only profile the same flow runs from the terminal:
 
