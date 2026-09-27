@@ -137,8 +137,8 @@ export function startLoginServer(
       }
       reply(page({
         ok: true,
-        title: 'Notion подключён',
-        detail: 'Можно закрыть эту вкладку и вернуться в DeepSeek Harness.',
+        title: 'Авторизация получена',
+        detail: 'Закройте вкладку — подключение завершается в DeepSeek Harness.',
       }));
       finish(() => resolveWait({ code, state }));
     });

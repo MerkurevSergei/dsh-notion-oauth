@@ -413,5 +413,12 @@ export function apply(ctx: Context, config: any) {
     })();
   }
 
-  ctx.effect(() => () => unmount());
+  ctx.effect(() => () => {
+    if (activeLoginClose) {
+      activeLoginClose();
+      activeLoginClose = undefined;
+      pending = undefined;
+    }
+    unmount();
+  });
 }
