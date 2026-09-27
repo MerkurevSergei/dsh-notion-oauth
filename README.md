@@ -10,21 +10,30 @@ Connect Notion from the [DeepSeek Harness](https://github.com/deepseek-ai/deepse
 - **Silent refresh** — access token refreshed automatically; refresh token rotated atomically.
 - **Tools as `mcp__notion__*`** — search, read/create pages, databases, comments via the official MCP server.
 
-## Install
+## Setup
 
-Via the DSH GUI: Settings → Plugins → Add plugin → `dsh-notion-oauth-ui`.
+**1. Install** — Settings → Plugins → **Add plugin** → `dsh-notion-oauth-ui` → **Install**.
 
-Or via CLI:
+![Adding the plugin in the DSH Plugins page](assets/setup-1-install.png)
+
+**2. Sign in** — Settings → **Notion** → **Login**.
+
+![The Notion settings page with the Login button](assets/setup-2-login.png)
+
+**3. Approve** — your browser opens Notion: pick a workspace and press **Continue**.
+
+![The Notion authorization page](assets/setup-3-approve.png)
+
+**4. Done** — the page switches to **Connected**, and the `mcp__notion__*` tools become available.
+
+![The Notion settings page showing Connected](assets/setup-4-connected.png)
+
+On a headless or CLI-only profile the same flow runs from the terminal:
 
 ```sh
 dsh plugin --profile <name> add dsh-notion-oauth-ui
+dsh notion login
 ```
-
-## Usage
-
-1. Open Settings → Notion → Login.
-2. Approve access in the browser.
-3. The token is stored in DSH credentials; the `mcp__notion__*` tools become available.
 
 ## Config
 

@@ -1,6 +1,6 @@
 {
   "name": "dsh-notion-oauth-ui",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Connect Notion from the GUI with OAuth 2.0 + PKCE — official Notion MCP, no integration token.",
   "icon": "./icon.svg",
   "type": "module",
@@ -21,7 +21,7 @@
     "./locale/*.json": "./locale/*.json",
     "./package.json": "./package.json"
   },
-  "files": ["lib", "locale", "icon.svg", "cordis.patch.yml", "README.md", "README.zh.md", "CHANGELOG.md", "LICENSE"],
+  "files": ["lib", "locale", "assets", "icon.svg", "cordis.patch.yml", "README.md", "README.zh.md", "CHANGELOG.md", "LICENSE"],
   "scripts": {
     "build": "node scripts/build.mjs",
     "typecheck": "tsc --noEmit",

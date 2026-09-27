@@ -10,21 +10,30 @@
 - **静默刷新** —— access token 自动刷新，refresh token 原子轮换。
 - **工具以 `mcp__notion__*` 挂载** —— 通过官方 MCP 服务器搜索、读取/创建页面、数据库与评论。
 
-## 安装
+## 安装与登录
 
-通过 DSH GUI：设置 → 插件 → 添加插件 → `dsh-notion-oauth-ui`。
+**1. 安装** —— 设置 → 插件 → **添加插件** → `dsh-notion-oauth-ui` → **Install**。
 
-或通过 CLI：
+![在 DSH 插件页添加插件](assets/setup-1-install.png)
+
+**2. 登录** —— 设置 → **Notion** → **Login**。
+
+![带 Login 按钮的 Notion 设置页](assets/setup-2-login.png)
+
+**3. 授权** —— 浏览器会打开 Notion：选择工作区并点击 **Continue**。
+
+![Notion 授权页面](assets/setup-3-approve.png)
+
+**4. 完成** —— 页面变为 **Connected**，`mcp__notion__*` 工具随即可用。
+
+![显示 Connected 的 Notion 设置页](assets/setup-4-connected.png)
+
+headless 或仅 CLI 的配置，可以在终端走同一条流程：
 
 ```sh
 dsh plugin --profile <name> add dsh-notion-oauth-ui
+dsh notion login
 ```
-
-## 使用
-
-1. 打开 设置 → Notion → Login。
-2. 在浏览器中批准访问。
-3. Token 存入 DSH 凭据层，`mcp__notion__*` 工具随即可用。
 
 ## 配置
 

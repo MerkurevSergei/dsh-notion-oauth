@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1
+
+- A visual setup guide in the README (both languages) with screenshots, plus a
+  `screenshots.json` so storefronts show them in the plugin card. No code changes.
+
 ## 1.0.0
 
 First release of `dsh-notion-oauth-ui` (renamed from `dsh-notion-oauth` — same plugin, new name).
