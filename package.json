@@ -1,11 +1,17 @@
 {
   "name": "dsh-notion-oauth",
-  "version": "0.2.13",
+  "version": "1.0.0",
   "description": "Connect Notion through the official Notion MCP with OAuth 2.0 and PKCE — GUI sign-in, no integration token required.",
   "icon": "./icon.svg",
   "type": "module",
   "license": "MIT",
-  "author": "Merkurev Sergei",
+  "author": "Merkurev Sergei <merkurevsn@gmail.com> (https://github.com/MerkurevSergei)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MerkurevSergei/dsh-notion-oauth.git"
+  },
+  "homepage": "https://github.com/MerkurevSergei/dsh-notion-oauth#readme",
+  "bugs": { "url": "https://github.com/MerkurevSergei/dsh-notion-oauth/issues" },
   "engines": { "node": ">=22.12.0", "dsh": ">=0.1.5-rc.3" },
   "packageManager": "pnpm@11.7.0",
   "main": "lib/index.js",
@@ -15,7 +21,7 @@
     "./locale/*.json": "./locale/*.json",
     "./package.json": "./package.json"
   },
-  "files": ["lib", "locale", "icon.svg", "cordis.patch.yml", "README.md", "README.zh.md", "LICENSE"],
+  "files": ["lib", "locale", "icon.svg", "cordis.patch.yml", "README.md", "README.zh.md", "CHANGELOG.md", "LICENSE"],
   "scripts": {
     "build": "node scripts/build.mjs",
     "typecheck": "tsc --noEmit",
