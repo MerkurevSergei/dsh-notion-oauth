@@ -1,9 +1,13 @@
 name: Publish
 
-# Publishes to npm through Trusted Publishing: nothing secret is stored in the
-# repository or in GitHub secrets. npm trusts this repository + workflow via
-# OIDC and issues a short-lived publish credential, and the published version
-# carries a provenance attestation.
+# Stages a release on npm through Trusted Publishing. Nothing secret is stored
+# in the repository or in GitHub secrets: npm trusts this repository + workflow
+# over OIDC, issues a short-lived credential, and the staged version carries a
+# provenance attestation.
+#
+# Staging deliberately defers the human approval — the version only becomes
+# public once a maintainer approves it (npmjs.com: the package's staged versions,
+# or `npm stage approve <stage-id>`).
 #
 # One-time setup on npmjs.com — package page → Settings → Trusted Publisher:
 #   Publisher:          GitHub Actions
@@ -11,9 +15,10 @@ name: Publish
 #   Repository:         dsh-notion-oauth
 #   Workflow filename:  publish.yml
 #   Environment:        (leave empty)
+#   Permissions:        Allow staged publish
 #
-# After that, releasing = bump the version, push, and publish a GitHub Release
-# with the matching tag (vX.Y.Z).
+# Releasing = bump the version, push, publish a GitHub Release with the matching
+# tag (vX.Y.Z), then approve the staged version.
 
 on:
   release:
@@ -28,18 +33,18 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Version comes from package.json's `packageManager` field.
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
           cache: pnpm
 
-      # Trusted Publishing needs npm >= 11.5.1.
+      # Trusted Publishing needs npm >= 11.5.1 and `npm stage` needs npm >= 11.6.
       - run: npm install -g npm@latest
 
       - run: pnpm install --frozen-lockfile
@@ -59,5 +64,5 @@ jobs:
             exit 1
           fi
 
-      - name: Publish
-        run: npm publish
+      - name: Stage the release
+        run: npm stage publish
