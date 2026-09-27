@@ -12,7 +12,7 @@ Connect Notion from the [DeepSeek Harness](https://github.com/deepseek-ai/deepse
 
 ## Setup
 
-**1. Install** — Settings → Plugins → **Add plugin** → `dsh-notion-oauth-ui` → **Install**.
+**1. Install** — sidebar → **Plugins** → **Add plugin** → `dsh-notion-oauth-ui` → **Install**.
 
 ![Adding the plugin in the DSH Plugins page](assets/setup-1-install.png)
 

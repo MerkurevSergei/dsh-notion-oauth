@@ -12,7 +12,7 @@
 
 ## 安装与登录
 
-**1. 安装** —— 设置 → 插件 → **添加插件** → `dsh-notion-oauth-ui` → **Install**。
+**1. 安装** —— 侧边栏 → **Plugins** → **Add plugin** → `dsh-notion-oauth-ui` → **Install**。
 
 ![在 DSH 插件页添加插件](assets/setup-1-install.png)
 
