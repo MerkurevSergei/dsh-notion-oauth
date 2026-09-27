@@ -21,7 +21,7 @@ function page(options: { ok: boolean; title: string; detail: string }): string {
   const wash = options.ok ? 'rgba(22,163,74,.12)' : 'rgba(220,38,38,.12)';
   const glyph = options.ok ? '&#10003;' : '&#10007;';
   return `<!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -108,8 +108,8 @@ export function startLoginServer(
       if (error) {
         reply(page({
           ok: false,
-          title: 'Доступ не предоставлен',
-          detail: 'Notion отклонил авторизацию. Вернитесь в настройки и попробуйте снова.',
+          title: 'Access denied',
+          detail: 'Notion declined the authorization. Return to settings and try again.',
         }));
         finish(() => rejectWait(new Error(`OAuth error: ${error}`)));
         return;
@@ -122,23 +122,23 @@ export function startLoginServer(
       if (!code || !state) {
         reply(page({
           ok: false,
-          title: 'Некорректный ответ',
-          detail: 'В ответе нет кода авторизации. Попробуйте войти ещё раз.',
+          title: 'Invalid response',
+          detail: 'The callback is missing the authorization code. Please try again.',
         }), 400);
         return;
       }
       if (state !== expectedState) {
         reply(page({
           ok: false,
-          title: 'Проверка не пройдена',
-          detail: 'Этот запрос не соответствует начатой авторизации.',
+          title: 'Verification failed',
+          detail: 'This request does not match the authorization that was started.',
         }), 400);
         return;
       }
       reply(page({
         ok: true,
-        title: 'Авторизация получена',
-        detail: 'Закройте вкладку — подключение завершается в DeepSeek Harness.',
+        title: 'Authorization received',
+        detail: 'Close this tab — the connection is finishing in DeepSeek Harness.',
       }));
       finish(() => resolveWait({ code, state }));
     });

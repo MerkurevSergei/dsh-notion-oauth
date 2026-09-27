@@ -96,7 +96,7 @@ export function NotionSettings() {
       setNote(null);
     } else if (pendingSeenRef.current && !status.loginPending) {
       setBusy(false);
-      setNote({ kind: 'err', text: 'Авторизация не завершена — попробуйте ещё раз.' });
+      setNote({ kind: 'err', text: 'Authorization was not completed — please try again.' });
     }
   }, [waiting, status]);
 
@@ -107,7 +107,7 @@ export function NotionSettings() {
       const r = await api<{ ok: boolean; url?: string; error?: string }>('/login', {});
       if (!r.ok || !r.url) throw new Error(r.error ?? 'login failed');
       window.open(r.url, '_blank', 'noopener');
-      setNote({ kind: 'info', text: 'Ожидаем подтверждения в браузере…' });
+      setNote({ kind: 'info', text: 'Waiting for confirmation in the browser…' });
     } catch (e) {
       setBusy(false);
       setNote({ kind: 'err', text: e instanceof Error ? e.message : String(e) });
@@ -128,10 +128,10 @@ export function NotionSettings() {
   }, [refresh]);
 
   const view = status === null
-    ? { label: 'Проверка…', mark: '⋯', box: styles.statusPending, markStyle: styles.glyphPending }
+    ? { label: 'Checking…', mark: '⋯', box: styles.statusPending, markStyle: styles.glyphPending }
     : connected
-      ? { label: 'Подключено', mark: '✓', box: styles.statusOn, markStyle: styles.glyphOn }
-      : { label: 'Не подключено', mark: '✕', box: styles.statusOff, markStyle: styles.glyphOff };
+      ? { label: 'Connected', mark: '✓', box: styles.statusOn, markStyle: styles.glyphOn }
+      : { label: 'Not connected', mark: '✕', box: styles.statusOff, markStyle: styles.glyphOff };
 
   return (
     <div style={styles.page}>
@@ -164,9 +164,9 @@ export function NotionSettings() {
         <div style={note.kind === 'info' ? styles.info : styles.err}>{note.text}</div>
       )}
       <div style={styles.hint}>
-        <p style={styles.hintP}>Авторизация через официальный Notion MCP (OAuth) — без токенов интеграций. Права берутся из вашего аккаунта Notion.</p>
-        <p style={styles.hintP}>После входа становятся доступны инструменты mcp__notion__* (поиск, чтение и создание страниц, базы данных).</p>
-        <p style={styles.hintP}>Токен продлевается в фоне, поэтому вход выполняется один раз.</p>
+        <p style={styles.hintP}>Authorizes through the official Notion MCP (OAuth) — no integration tokens. Permissions come from your Notion account.</p>
+        <p style={styles.hintP}>After signing in, the mcp__notion__* tools become available (search, read and create pages, databases).</p>
+        <p style={styles.hintP}>The token renews in the background, so you only sign in once.</p>
       </div>
     </div>
   );
