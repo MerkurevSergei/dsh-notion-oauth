@@ -32,6 +32,8 @@ dsh plugin --profile <name> add dsh-notion-oauth
 |---|---|---|
 | `mcpUrl` | `https://mcp.notion.com/mcp` | Notion MCP server URL |
 | `port` | `53007` | Local OAuth callback port (`127.0.0.1`) |
+| `refreshLeadMs` | `14400000` (4 h) | Refresh the token this far before it expires |
+| `refreshRetryMs` | `600000` (10 min) | Retry interval when a refresh attempt fails |
 
 ## Security
 

@@ -29,6 +29,8 @@ export const inject = ['credentials', 'cmdlineArgs'];
 export const Config = z.object({
   mcpUrl: z.string().default('https://mcp.notion.com/mcp'),
   port: z.number().default(53007),
+  refreshLeadMs: z.number().default(4 * 60 * 60 * 1000),
+  refreshRetryMs: z.number().default(10 * 60 * 1000),
 });
 
 const API_PREFIX = '/api/dsh-notion-oauth';
@@ -76,28 +78,31 @@ export function apply(ctx: Context, config: any) {
     mounted = true;
   }
 
-  function scheduleRefresh(expiresAt: number): void {
+  function armRefresh(delayMs: number): void {
     if (refreshTimer !== undefined) clearTimeout(refreshTimer);
-    // Refresh ~5 minutes before expiry, never sooner than 30s from now.
-    const delay = Math.max(30_000, expiresAt - Date.now() - 5 * 60_000);
-    refreshTimer = setTimeout(async () => {
-      try {
-        await refreshAndMount();
-        const t = await store.load();
-        if (t) scheduleRefresh(t.expiresAt);
-      } catch (e) {
-        console.error('[dsh-notion-oauth] refresh failed:', e);
-        // Retry soon; an invalid_grant already cleared the store and unmounted.
-        const t = await store.load();
-        if (t) scheduleRefresh(Date.now() + 60_000);
-      }
-    }, delay);
+    refreshTimer = setTimeout(() => {
+      void runRefresh();
+    }, delayMs);
     (refreshTimer as any).unref?.();
+  }
+
+  async function runRefresh(): Promise<void> {
+    try {
+      await refreshAndMount();
+      const t = await store.load();
+      if (t) {
+        armRefresh(Math.max(30_000, t.expiresAt - Date.now() - config.refreshLeadMs));
+      }
+    } catch (e) {
+      console.error('[dsh-notion-oauth] refresh failed:', e);
+      // invalid_grant already cleared the store and unmounted; otherwise retry.
+      if (await store.load()) armRefresh(config.refreshRetryMs);
+    }
   }
 
   function mountAndSchedule(accessToken: string, expiresAt: number): void {
     mount(accessToken);
-    scheduleRefresh(expiresAt);
+    armRefresh(Math.max(30_000, expiresAt - Date.now() - config.refreshLeadMs));
   }
 
   async function refreshAndMount(): Promise<void> {
