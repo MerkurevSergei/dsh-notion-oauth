@@ -4,12 +4,21 @@
 
 import { createHash, randomBytes } from 'node:crypto';
 
-const UA = 'dsh-notion-oauth/0.1.0';
+declare const __PKG_VERSION__: string;
+
+const UA = `dsh-notion-oauth/${__PKG_VERSION__}`;
 
 function withUA(init: RequestInit = {}): RequestInit {
   const headers = new Headers(init.headers);
   if (!headers.has('User-Agent')) headers.set('User-Agent', UA);
   return { ...init, headers };
+}
+
+function withTimeout(ms: number, init: RequestInit = {}): RequestInit {
+  const signal = init.signal
+    ? AbortSignal.any([init.signal, AbortSignal.timeout(ms)])
+    : AbortSignal.timeout(ms);
+  return { ...init, signal };
 }
 
 function base64url(buf: Buffer): string {
@@ -28,8 +37,8 @@ export function generateState(): string {
   return base64url(randomBytes(16));
 }
 
-async function fetchJson(url: string, init?: RequestInit): Promise<any> {
-  const res = await fetch(url, withUA(init));
+async function fetchJson(url: string, init: RequestInit = {}, timeoutMs = 30_000): Promise<any> {
+  const res = await fetch(url, withUA(withTimeout(timeoutMs, init)));
   if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
   return res.json();
 }
@@ -45,16 +54,25 @@ export async function discoverOAuth(resourceBaseUrl: string): Promise<OAuthEndpo
   const doc = await fetchJson(`${origin}/.well-known/oauth-protected-resource`);
   const authServer: string | undefined = doc.authorization_servers?.[0];
   if (!authServer) throw new Error('OAuth discovery: no authorization_servers advertised');
+  if (!/^https:\/\//i.test(authServer)) {
+    throw new Error('OAuth discovery: authorization server must be https');
+  }
   const meta = await fetchJson(`${authServer}/.well-known/oauth-authorization-server`);
-  return {
+  const endpoints = {
     authorizationEndpoint: meta.authorization_endpoint,
     tokenEndpoint: meta.token_endpoint,
     registrationEndpoint: meta.registration_endpoint,
   };
+  for (const [key, value] of Object.entries(endpoints)) {
+    if (typeof value !== 'string' || !/^https:\/\//i.test(value)) {
+      throw new Error(`OAuth discovery: ${key} must be https`);
+    }
+  }
+  return endpoints;
 }
 
 export async function registerClient(registrationEndpoint: string, redirectUris: string[]): Promise<string> {
-  const res = await fetch(registrationEndpoint, withUA({
+  const res = await fetch(registrationEndpoint, withUA(withTimeout(30_000, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -63,7 +81,7 @@ export async function registerClient(registrationEndpoint: string, redirectUris:
       token_endpoint_auth_method: 'none',
       grant_types: ['authorization_code', 'refresh_token'],
     }),
-  }));
+  })));
   if (!res.ok) throw new Error(`DCR failed: HTTP ${res.status}`);
   const json: any = await res.json();
   return json.client_id as string;
@@ -109,7 +127,7 @@ export async function exchangeCode(tokenEndpoint: string, opts: {
   redirectUri: string;
   codeVerifier: string;
 }): Promise<Tokens> {
-  const res = await fetch(tokenEndpoint, withUA({
+  const res = await fetch(tokenEndpoint, withUA(withTimeout(60_000, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
@@ -119,7 +137,7 @@ export async function exchangeCode(tokenEndpoint: string, opts: {
       redirect_uri: opts.redirectUri,
       code_verifier: opts.codeVerifier,
     }),
-  }));
+  })));
   if (!res.ok) throw new Error(`token exchange failed: HTTP ${res.status}`);
   return parseTokenBody(await res.json());
 }
@@ -134,7 +152,7 @@ export async function refreshAccessToken(tokenEndpoint: string, opts: {
   clientId: string;
   refreshToken: string;
 }): Promise<Tokens> {
-  const res = await fetch(tokenEndpoint, withUA({
+  const res = await fetch(tokenEndpoint, withUA(withTimeout(60_000, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
@@ -142,7 +160,7 @@ export async function refreshAccessToken(tokenEndpoint: string, opts: {
       client_id: opts.clientId,
       refresh_token: opts.refreshToken,
     }),
-  }));
+  })));
   const body: any = await res.json().catch(() => ({}));
   if (body.error === 'invalid_grant') throw new InvalidGrantError();
   if (!res.ok) throw new Error(`refresh failed: HTTP ${res.status}`);

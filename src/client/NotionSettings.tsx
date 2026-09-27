@@ -1,6 +1,6 @@
 // Notion OAuth settings page: Login / Logout + connection status.
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 
 const API = '/api/dsh-notion-oauth';
@@ -10,6 +10,7 @@ interface Status {
   connected: boolean;
   mounted: boolean;
   expiresAt: number | null;
+  loginPending: boolean;
 }
 
 async function api<T>(path: string, body?: unknown): Promise<T> {
@@ -17,8 +18,18 @@ async function api<T>(path: string, body?: unknown): Promise<T> {
     method: body === undefined ? 'GET' : 'POST',
     headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
     body: body === undefined ? undefined : JSON.stringify(body),
+    signal: AbortSignal.timeout(15_000),
   });
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  if (!response.ok) {
+    let detail = '';
+    try {
+      const j = (await response.json()) as { error?: unknown };
+      if (typeof j?.error === 'string') detail = j.error;
+    } catch {
+      /* non-JSON error body */
+    }
+    throw new Error(detail ? `${detail} (HTTP ${response.status})` : `HTTP ${response.status}`);
+  }
   return (await response.json()) as T;
 }
 
@@ -50,6 +61,7 @@ export function NotionSettings() {
   // A transient note that adds information. The status box itself is the single
   // source of truth, so no success text is duplicated here.
   const [note, setNote] = useState<{ kind: 'info' | 'err'; text: string } | null>(null);
+  const pendingSeenRef = useRef(false);
 
   const connected = status?.connected ?? false;
 
@@ -69,13 +81,24 @@ export function NotionSettings() {
     return () => window.clearInterval(poll);
   }, [refresh]);
 
-  // Once the connection is live the "waiting" note has said all it can.
+  // Follow the host's login state: latch that we saw a pending login, then
+  // settle `busy` once it either connects or ends without connecting (denied,
+  // failed, or expired) so the UI never gets stuck.
   useEffect(() => {
-    if (connected && note?.kind === 'info') {
+    if (status?.loginPending) pendingSeenRef.current = true;
+  }, [status?.loginPending]);
+
+  const waiting = busy && note?.kind === 'info';
+  useEffect(() => {
+    if (!waiting || status === null) return;
+    if (status.connected) {
       setBusy(false);
       setNote(null);
+    } else if (pendingSeenRef.current && !status.loginPending) {
+      setBusy(false);
+      setNote({ kind: 'err', text: 'Авторизация не завершена — попробуйте ещё раз.' });
     }
-  }, [connected, note]);
+  }, [waiting, status]);
 
   const login = useCallback(async () => {
     setBusy(true);
@@ -83,7 +106,7 @@ export function NotionSettings() {
     try {
       const r = await api<{ ok: boolean; url?: string; error?: string }>('/login', {});
       if (!r.ok || !r.url) throw new Error(r.error ?? 'login failed');
-      window.open(r.url, '_blank');
+      window.open(r.url, '_blank', 'noopener');
       setNote({ kind: 'info', text: 'Ожидаем подтверждения в браузере…' });
     } catch (e) {
       setBusy(false);

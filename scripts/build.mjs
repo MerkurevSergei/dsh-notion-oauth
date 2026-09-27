@@ -4,7 +4,9 @@
 //                                                 __ModuleLoader__ closure-factory contract;
 //                                                 react / react/jsx-runtime come from the injected require)
 import { build } from 'esbuild';
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
+
+const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 
 /** Host runtime imports left to the profile / app runtime. */
 const HOST_EXTERNAL = [
@@ -30,6 +32,7 @@ await build({
   target: 'node22',
   legalComments: 'inline',
   external: HOST_EXTERNAL,
+  define: { __PKG_VERSION__: JSON.stringify(pkg.version) },
 });
 
 // ------------------------------------------------------------- browser half

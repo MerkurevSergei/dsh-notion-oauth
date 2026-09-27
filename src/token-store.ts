@@ -10,6 +10,15 @@ export interface StoredTokens {
   clientId: string;
 }
 
+function isStoredTokens(value: unknown): value is StoredTokens {
+  if (typeof value !== 'object' || value === null) return false;
+  const v = value as Record<string, unknown>;
+  return typeof v.accessToken === 'string' && v.accessToken.length > 0
+    && typeof v.refreshToken === 'string' && v.refreshToken.length > 0
+    && typeof v.clientId === 'string' && v.clientId.length > 0
+    && typeof v.expiresAt === 'number' && Number.isFinite(v.expiresAt);
+}
+
 export class NotionTokenStore {
   private credentials: any;
 
@@ -21,7 +30,8 @@ export class NotionTokenStore {
     const resolved = await this.credentials.resolve(REF);
     if (!resolved) return undefined;
     try {
-      return JSON.parse(resolved.value) as StoredTokens;
+      const parsed: unknown = JSON.parse(resolved.value);
+      return isStoredTokens(parsed) ? parsed : undefined;
     } catch {
       return undefined;
     }

@@ -56,8 +56,14 @@ export function apply(ctx: Context, config: any) {
   let activeLoginClose: (() => void) | undefined;
   let mounted = false;
   let refreshTimer: ReturnType<typeof setTimeout> | undefined;
+  let loginStarting = false;
+  let tokenLock: Promise<unknown> = Promise.resolve();
 
   function unmount() {
+    if (refreshTimer !== undefined) {
+      clearTimeout(refreshTimer);
+      refreshTimer = undefined;
+    }
     if (slot.child) {
       slot.child.dispose();
       slot.child = undefined;
@@ -88,11 +94,8 @@ export function apply(ctx: Context, config: any) {
 
   async function runRefresh(): Promise<void> {
     try {
+      // refreshAndMount re-arms the next refresh via mountAndSchedule.
       await refreshAndMount();
-      const t = await store.load();
-      if (t) {
-        armRefresh(Math.max(30_000, t.expiresAt - Date.now() - config.refreshLeadMs));
-      }
     } catch (e) {
       console.error('[dsh-notion-oauth] refresh failed:', e);
       // invalid_grant already cleared the store and unmounted; otherwise retry.
@@ -105,83 +108,114 @@ export function apply(ctx: Context, config: any) {
     armRefresh(Math.max(30_000, expiresAt - Date.now() - config.refreshLeadMs));
   }
 
-  async function refreshAndMount(): Promise<void> {
-    const tokens = await store.load();
-    if (!tokens) return;
-    const disc = await discoverOAuth(config.mcpUrl);
-    let next;
-    try {
-      next = await refreshAccessToken(disc.tokenEndpoint, {
-        clientId: tokens.clientId,
-        refreshToken: tokens.refreshToken,
-      });
-    } catch (e) {
-      if (e instanceof InvalidGrantError) {
-        await store.clear();
-        unmount();
-        return;
-      }
-      throw e;
-    }
-    const refreshed: StoredTokens = {
-      accessToken: next.accessToken,
-      refreshToken: next.refreshToken ?? tokens.refreshToken,
-      expiresAt: Date.now() + next.expiresIn * 1000,
-      clientId: tokens.clientId,
-    };
-    await store.save(refreshed);
-    mountAndSchedule(refreshed.accessToken, refreshed.expiresAt);
+  /** Serialize read-modify-write token mutations (login vs refresh). */
+  function withTokenLock<T>(fn: () => Promise<T>): Promise<T> {
+    const run = tokenLock.then(fn, fn);
+    tokenLock = run.then(() => undefined, () => undefined);
+    return run;
   }
 
-  async function completePending(code: string): Promise<void> {
-    if (!pending) throw new Error('no pending login');
-    const { endpoints, clientId, verifier, redirectUri } = pending;
-    const tokens = await exchangeCode(endpoints.tokenEndpoint, {
-      clientId,
-      code,
-      redirectUri,
-      codeVerifier: verifier,
+  function refreshAndMount(): Promise<void> {
+    return withTokenLock(async () => {
+      const tokens = await store.load();
+      if (!tokens) return;
+      const disc = await discoverOAuth(config.mcpUrl);
+      let next;
+      try {
+        next = await refreshAccessToken(disc.tokenEndpoint, {
+          clientId: tokens.clientId,
+          refreshToken: tokens.refreshToken,
+        });
+      } catch (e) {
+        if (e instanceof InvalidGrantError) {
+          await store.clear();
+          unmount();
+          return;
+        }
+        throw e;
+      }
+      const refreshed: StoredTokens = {
+        accessToken: next.accessToken,
+        refreshToken: next.refreshToken ?? tokens.refreshToken,
+        expiresAt: Date.now() + next.expiresIn * 1000,
+        clientId: tokens.clientId,
+      };
+      await store.save(refreshed);
+      mountAndSchedule(refreshed.accessToken, refreshed.expiresAt);
     });
-    if (!tokens.refreshToken) throw new Error('authorization response missing refresh_token');
-    const stored: StoredTokens = {
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-      expiresAt: Date.now() + tokens.expiresIn * 1000,
-      clientId,
-    };
-    await store.save(stored);
-    mountAndSchedule(stored.accessToken, stored.expiresAt);
+  }
+
+  function completePending(code: string): Promise<void> {
+    return withTokenLock(async () => {
+      if (!pending) throw new Error('no pending login');
+      const { endpoints, clientId, verifier, redirectUri } = pending;
+      const tokens = await exchangeCode(endpoints.tokenEndpoint, {
+        clientId,
+        code,
+        redirectUri,
+        codeVerifier: verifier,
+      });
+      if (!tokens.refreshToken) throw new Error('authorization response missing refresh_token');
+      const stored: StoredTokens = {
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        expiresAt: Date.now() + tokens.expiresIn * 1000,
+        clientId,
+      };
+      await store.save(stored);
+      mountAndSchedule(stored.accessToken, stored.expiresAt);
+    });
   }
 
   async function beginLogin(): Promise<{ url: string; done: Promise<void> }> {
-    // One pending login at a time: cancel a flow that is still waiting for its
-    // redirect so it cannot hold the callback port or be completed by mistake.
-    if (activeLoginClose) {
-      activeLoginClose();
-      activeLoginClose = undefined;
-      pending = undefined;
-    }
-    const endpoints = await discoverOAuth(config.mcpUrl);
-    const verifier = generateVerifier();
-    const state = generateState();
-    const { redirectUri, wait, close } = await startLoginServer(state, config.port);
-    activeLoginClose = close;
-    const clientId = await registerClient(endpoints.registrationEndpoint, [redirectUri]);
-    pending = { endpoints, clientId, verifier, redirectUri };
-    const url = buildAuthorizeUrl(endpoints.authorizationEndpoint, {
-      clientId,
-      redirectUri,
-      state,
-      codeChallenge: computeChallenge(verifier),
-    });
-    const done = wait
-      .then(({ code }) => completePending(code))
-      .finally(() => {
+    // Serialize the synchronous start-up window: until the callback server is
+    // listening there is no `activeLoginClose` to cancel, so a second caller
+    // would race us for the port.
+    if (loginStarting) throw new Error('login already in progress');
+    loginStarting = true;
+    try {
+      // One pending login at a time: cancel a flow that is still waiting for
+      // its redirect so it cannot hold the callback port or be completed by
+      // mistake.
+      if (activeLoginClose) {
+        activeLoginClose();
         activeLoginClose = undefined;
         pending = undefined;
-      });
-    done.catch((e) => console.error('[dsh-notion-oauth] login failed:', e));
-    return { url, done };
+      }
+      const endpoints = await discoverOAuth(config.mcpUrl);
+      const verifier = generateVerifier();
+      const state = generateState();
+      const { redirectUri, wait, close } = await startLoginServer(state, config.port);
+      activeLoginClose = close;
+      try {
+        const clientId = await registerClient(endpoints.registrationEndpoint, [redirectUri]);
+        const myPending: PendingLogin = { endpoints, clientId, verifier, redirectUri };
+        pending = myPending;
+        const url = buildAuthorizeUrl(endpoints.authorizationEndpoint, {
+          clientId,
+          redirectUri,
+          state,
+          codeChallenge: computeChallenge(verifier),
+        });
+        const done = wait
+          .then(({ code }) => completePending(code))
+          .finally(() => {
+            // Only clear state this flow still owns: a newer login may have
+            // replaced it while the token exchange was in flight.
+            if (activeLoginClose === close) activeLoginClose = undefined;
+            if (pending === myPending) pending = undefined;
+          });
+        done.catch((e) => console.error('[dsh-notion-oauth] login failed:', e));
+        return { url, done };
+      } catch (e) {
+        // Registration failed after the callback server started: release it.
+        close();
+        if (activeLoginClose === close) activeLoginClose = undefined;
+        throw e;
+      }
+    } finally {
+      loginStarting = false;
+    }
   }
 
   // --- loopback-fenced routes (status / login / logout) ---
@@ -250,6 +284,7 @@ export function apply(ctx: Context, config: any) {
           connected: mounted && expiresAt !== null && expiresAt > Date.now(),
           mounted,
           expiresAt,
+          loginPending: activeLoginClose !== undefined,
         });
       },
     },
@@ -277,6 +312,12 @@ export function apply(ctx: Context, config: any) {
           writeJson(res, 403, { error: 'forbidden' });
           return;
         }
+        // Cancel an in-flight authorization so its callback cannot reconnect.
+        if (activeLoginClose) {
+          activeLoginClose();
+          activeLoginClose = undefined;
+          pending = undefined;
+        }
         await store.clear();
         unmount();
         writeJson(res, 200, { ok: true });
@@ -298,8 +339,8 @@ export function apply(ctx: Context, config: any) {
   const isNotionCommand = (ctx.cmdlineArgs?.get?.() ?? [])[0] === 'notion';
   if (isNotionCommand) {
     const program = new Command();
-    program
-      .command('notion')
+    const notion = program.command('notion').description('Notion OAuth connection');
+    notion
       .command('login')
       .description('Authorize Notion via the official MCP OAuth flow')
       .action(async () => {
@@ -307,6 +348,43 @@ export function apply(ctx: Context, config: any) {
           const { url, done } = await beginLogin();
           console.log(`[dsh-notion-oauth] open this URL to authorize Notion:\n${url}`);
           await done;
+          console.log('[dsh-notion-oauth] connected');
+          ctx.appExit?.(0);
+        } catch (e) {
+          console.error(e);
+          ctx.appExit?.(1);
+        }
+      });
+    notion
+      .command('logout')
+      .description('Disconnect Notion and forget the stored token')
+      .action(async () => {
+        try {
+          if (activeLoginClose) {
+            activeLoginClose();
+            activeLoginClose = undefined;
+            pending = undefined;
+          }
+          await store.clear();
+          unmount();
+          console.log('[dsh-notion-oauth] disconnected');
+          ctx.appExit?.(0);
+        } catch (e) {
+          console.error(e);
+          ctx.appExit?.(1);
+        }
+      });
+    notion
+      .command('status')
+      .description('Show the stored Notion token state')
+      .action(async () => {
+        try {
+          const tokens = await store.load();
+          const valid = tokens !== undefined && tokens.expiresAt > Date.now();
+          console.log(JSON.stringify({
+            token: tokens === undefined ? 'none' : valid ? 'valid' : 'expired',
+            expiresAt: tokens?.expiresAt ?? null,
+          }, null, 2));
           ctx.appExit?.(0);
         } catch (e) {
           console.error(e);
@@ -329,6 +407,8 @@ export function apply(ctx: Context, config: any) {
         }
       } catch (e) {
         console.error('[dsh-notion-oauth] startup error:', e);
+        // A transient discovery/refresh failure still leaves valid tokens: retry.
+        if (await store.load()) armRefresh(config.refreshRetryMs);
       }
     })();
   }
