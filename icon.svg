@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Notion">
+  <title>Notion</title>
+  <rect x="0.5" y="0.5" width="31" height="31" rx="8.5" fill="#FFFFFF" stroke="#E1E4E8"/>
+  <path d="M10 22.5V9l10 13.5V9"
+        fill="none" stroke="#111111" stroke-width="3.1"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="25.5" cy="25.5" r="4.8" fill="#2563EB" stroke="#FFFFFF" stroke-width="1.7"/>
+</svg>

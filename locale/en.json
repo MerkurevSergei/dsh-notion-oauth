@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Notion",
+    "description": "Connect Notion through the official Notion MCP with OAuth 2.0 and PKCE — sign in from the GUI, no integration token required."
+  }
+}
