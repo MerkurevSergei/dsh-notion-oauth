@@ -1,0 +1,9 @@
+# dsh-notion-oauth bundle patch: inserts the dual-face plugin row into the
+# profile roster. Applied as a profile bundle layer (the `dsh.bundle.patch`
+# manifest field). Install with:
+#   dsh plugin --profile <name> add <package>
+# The node half (exports ".") runs in the host process (OAuth, /api/dsh-notion-oauth
+# routes, MCP mount); the browser half (exports "./client") renders the settings page.
+- insert:
+    - id: notion
+      name: 'dsh-notion-oauth'
