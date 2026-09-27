@@ -25,7 +25,14 @@ async function api<T>(path: string, body?: unknown): Promise<T> {
 const styles: Record<string, CSSProperties> = {
   page: { display: 'flex', flexDirection: 'column', gap: 12, fontSize: 13, lineHeight: 1.5, padding: '4px 2px' },
   title: { margin: 0, fontSize: 15 },
-  status: { padding: '8px 10px', borderRadius: 6, background: 'rgba(127,127,127,.12)' },
+  status: { display: 'flex', alignItems: 'center', gap: 9, padding: '9px 12px', borderRadius: 8, border: '1px solid transparent', fontWeight: 500 },
+  statusPending: { background: 'rgba(127,127,127,.10)', borderColor: 'rgba(127,127,127,.20)', opacity: 0.72 },
+  statusOn: { background: 'rgba(34,197,94,.10)', borderColor: 'rgba(34,197,94,.34)', color: '#16a34a' },
+  statusOff: { background: 'rgba(229,72,77,.09)', borderColor: 'rgba(229,72,77,.26)', color: '#e5484d' },
+  glyph: { width: 20, height: 20, borderRadius: '50%', display: 'grid', placeItems: 'center', fontSize: 12, lineHeight: 1, fontWeight: 700, flex: '0 0 auto' },
+  glyphPending: { background: 'rgba(127,127,127,.18)' },
+  glyphOn: { background: 'rgba(34,197,94,.18)', color: '#16a34a' },
+  glyphOff: { background: 'rgba(229,72,77,.14)', color: '#e5484d' },
   row: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   button: { padding: '5px 12px', borderRadius: 6, border: '1px solid rgba(127,127,127,.35)', background: 'transparent', color: 'inherit', font: 'inherit', cursor: 'pointer' },
   buttonPrimary: { padding: '5px 12px', borderRadius: 6, border: '1px solid #2563eb', background: '#2563eb', color: '#fff', font: 'inherit', cursor: 'pointer' },
@@ -97,15 +104,18 @@ export function NotionSettings() {
     }
   }, [refresh]);
 
+  const view = status === null
+    ? { label: 'Проверка…', mark: '⋯', box: styles.statusPending, markStyle: styles.glyphPending }
+    : connected
+      ? { label: 'Подключено', mark: '✓', box: styles.statusOn, markStyle: styles.glyphOn }
+      : { label: 'Не подключено', mark: '✕', box: styles.statusOff, markStyle: styles.glyphOff };
+
   return (
     <div style={styles.page}>
       <h2 style={styles.title}>Notion (OAuth)</h2>
-      <div style={styles.status}>
-        {status === null
-          ? <span>Проверка…</span>
-          : connected
-            ? <span style={styles.ok}>Подключено</span>
-            : <span style={styles.err}>Не подключено</span>}
+      <div style={{ ...styles.status, ...view.box }}>
+        <span style={{ ...styles.glyph, ...view.markStyle }}>{view.mark}</span>
+        <span>{view.label}</span>
       </div>
       <div style={styles.row}>
         {!connected && (
