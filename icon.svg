@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Notion">
   <title>Notion</title>
   <rect x="0.5" y="0.5" width="31" height="31" rx="8.5" fill="#FFFFFF" stroke="#E1E4E8"/>
-  <g transform="translate(14.5 14.5) rotate(-8) scale(0.78)">
+  <g transform="translate(14.7 14.7) rotate(-3) scale(0.82)">
     <path d="M-6.5 7.5V-7.5h3.8l5.4 10.7V-7.5h3.8v15h-3.8l-5.4-10.7v10.7z"
-          transform="translate(-1.7 1.7)" fill="#C2C7CE"/>
+          transform="translate(-0.7 0.7)" fill="#D3D7DC"/>
     <path d="M-6.5 7.5V-7.5h3.8l5.4 10.7V-7.5h3.8v15h-3.8l-5.4-10.7v10.7z"
           fill="#111111"/>
   </g>
-  <circle cx="25.4" cy="25.4" r="4.2" fill="#16A34A" stroke="#FFFFFF" stroke-width="1.6"/>
+  <circle cx="25.8" cy="25.8" r="4.3" fill="#16A34A" stroke="#FFFFFF" stroke-width="1.5"/>
 </svg>
