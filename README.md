@@ -33,6 +33,28 @@ dsh plugin --profile <name> add dsh-notion-oauth
 | `mcpUrl` | `https://mcp.notion.com/mcp` | Notion MCP server URL |
 | `port` | `53007` | Local OAuth callback port (`127.0.0.1`) |
 
+## Security
+
+- **Loopback-only control routes.** The Settings page talks to
+  `/api/dsh-notion-oauth/{status,login,logout}`. Each route is pinned to one HTTP
+  method (`GET /status`, `POST /login`, `POST /logout`) and accepts only requests
+  whose remote address and `Host` are loopback, that are not `Sec-Fetch-Site:
+  cross-site`, and — for the state-changing routes — that carry an explicit
+  same-origin `Origin`. A cross-site page cannot start or cancel a login.
+- **OAuth hardening.** Authorization code + PKCE (S256), a per-flow `state` the
+  callback server verifies, and a 10-minute deadline on the callback. A malformed
+  or forged callback is answered with 400 and leaves the pending login running,
+  so a stray local request cannot kill a real authorization.
+- **Transport.** `mcpUrl` must be `https://` — the plugin refuses to load
+  otherwise. Discovery endpoints (authorization, token, registration) are read
+  from whatever the `mcpUrl` resource advertises, so keep it on a trusted origin.
+- **Token at rest.** The access/refresh token is stored as a single record in the
+  DSH credentials service (`NOTION_OAUTH`). That store is only as private as your
+  OS user account: tool processes run as the same user, so any plugin with
+  credentials access can read every stored secret (`NOTION_OAUTH`,
+  `DEEPSEEK_API_KEY`, …), not just its own. The token is never exposed to the
+  browser half, never returned by an HTTP route, and never written to logs.
+
 ## License
 
 MIT. Reuses code/patterns from `dsh-notion-mcp` and `dsh-notion-connector` (both MIT).

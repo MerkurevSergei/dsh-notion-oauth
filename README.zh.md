@@ -33,6 +33,13 @@ dsh plugin --profile <name> add dsh-notion-oauth
 | `mcpUrl` | `https://mcp.notion.com/mcp` | Notion MCP 服务器 URL |
 | `port` | `53007` | 本地 OAuth 回调端口（`127.0.0.1`） |
 
+## 安全
+
+- **仅限回环的控制路由。** 设置页通过 `/api/dsh-notion-oauth/{status,login,logout}` 通信。每个路由固定一种 HTTP 方法（`GET /status`、`POST /login`、`POST /logout`），并且只接受远端地址与 `Host` 均为回环、非 `Sec-Fetch-Site: cross-site`、且对改变状态的路由携带显式同源 `Origin` 的请求。跨站页面无法发起或取消登录。
+- **OAuth 加固。** 授权码 + PKCE（S256）、每次流程独立的 `state`（由回调服务器校验），以及 10 分钟的回调截止时间。格式错误或伪造的回调返回 400，**不会**中断正在等待的登录。
+- **传输。** `mcpUrl` 必须是 `https://`，否则插件拒绝加载。发现端点（授权、令牌、注册）取自 `mcpUrl` 资源所声明的地址，因此请保持其来源可信。
+- **静态令牌。** access/refresh token 以单条记录存放在 DSH 凭据层（`NOTION_OAUTH`）。该存储的私密性仅等同于你的操作系统用户账户：工具进程以同一用户运行，因此任何拥有凭据访问权的插件都能读取**所有**已存密钥（`NOTION_OAUTH`、`DEEPSEEK_API_KEY` 等），而不只是自己的。令牌不会暴露给浏览器端、不会由任何 HTTP 路由返回，也不会写入日志。
+
 ## 许可证
 
 MIT。复用了 `dsh-notion-mcp` 与 `dsh-notion-connector`（均为 MIT）的代码与设计模式。

@@ -42,8 +42,16 @@ interface PendingLogin {
 
 export function apply(ctx: Context, config: any) {
   const store = new NotionTokenStore(ctx.credentials);
+
+  // Fail closed on a non-TLS MCP endpoint: OAuth discovery trusts whatever the
+  // resource advertises, so a plaintext or unexpected origin is never accepted.
+  if (!/^https:\/\//i.test(config.mcpUrl)) {
+    throw new Error(`dsh-notion-oauth: mcpUrl must be an https:// URL (got "${config.mcpUrl}")`);
+  }
+
   const slot: { child?: { dispose(): void } } = {};
   let pending: PendingLogin | undefined;
+  let activeLoginClose: (() => void) | undefined;
 
   function unmount() {
     if (slot.child) {
@@ -113,10 +121,18 @@ export function apply(ctx: Context, config: any) {
   }
 
   async function beginLogin(): Promise<{ url: string; done: Promise<void> }> {
+    // One pending login at a time: cancel a flow that is still waiting for its
+    // redirect so it cannot hold the callback port or be completed by mistake.
+    if (activeLoginClose) {
+      activeLoginClose();
+      activeLoginClose = undefined;
+      pending = undefined;
+    }
     const endpoints = await discoverOAuth(config.mcpUrl);
     const verifier = generateVerifier();
     const state = generateState();
-    const { redirectUri, wait } = await startLoginServer(state, config.port);
+    const { redirectUri, wait, close } = await startLoginServer(state, config.port);
+    activeLoginClose = close;
     const clientId = await registerClient(endpoints.registrationEndpoint, [redirectUri]);
     pending = { endpoints, clientId, verifier, redirectUri };
     const url = buildAuthorizeUrl(endpoints.authorizationEndpoint, {
@@ -125,15 +141,28 @@ export function apply(ctx: Context, config: any) {
       state,
       codeChallenge: computeChallenge(verifier),
     });
-    const done = wait.then(({ code }) => completePending(code));
+    const done = wait
+      .then(({ code }) => completePending(code))
+      .finally(() => {
+        activeLoginClose = undefined;
+        pending = undefined;
+      });
     done.catch((e) => console.error('[dsh-notion-oauth] login failed:', e));
     return { url, done };
   }
 
   // --- loopback-fenced routes (status / login / logout) ---
-  function isLoopback(req: IncomingMessage): boolean {
+  //
+  // Every route is pinned to one method, and the two state-changing ones demand
+  // an explicit same-origin `Origin` instead of tolerating its absence: a
+  // cross-site GET without `Origin` (an <img>, a navigation) must never reach
+  // login or logout, and `Sec-Fetch-Site` alone is not sent by every client.
+  function isTrustedRequest(req: IncomingMessage, method: 'GET' | 'POST'): boolean {
+    if (req.method !== method) return false;
+
     const addr = req.socket.remoteAddress;
     if (addr !== '127.0.0.1' && addr !== '::1' && addr !== '::ffff:127.0.0.1') return false;
+
     const host = req.headers.host;
     if (typeof host !== 'string') return false;
     let hostUrl: URL;
@@ -144,9 +173,14 @@ export function apply(ctx: Context, config: any) {
     }
     const hn = hostUrl.hostname;
     if (hn !== '127.0.0.1' && hn !== 'localhost' && hn !== '[::1]') return false;
+
     if (req.headers['sec-fetch-site'] === 'cross-site') return false;
+
     const origin = req.headers.origin;
-    if (origin === undefined) return true;
+    if (origin === undefined) {
+      // Safe reads may omit it; anything that changes state may not.
+      return method === 'GET';
+    }
     try {
       return new URL(origin).host === hostUrl.host;
     } catch {
@@ -164,7 +198,7 @@ export function apply(ctx: Context, config: any) {
       kind: 'exact',
       path: `${API_PREFIX}/status`,
       handler: async (req: IncomingMessage, res: ServerResponse) => {
-        if (!isLoopback(req)) {
+        if (!isTrustedRequest(req, 'GET')) {
           writeJson(res, 403, { error: 'forbidden' });
           return;
         }
@@ -176,7 +210,7 @@ export function apply(ctx: Context, config: any) {
       kind: 'exact',
       path: `${API_PREFIX}/login`,
       handler: async (req: IncomingMessage, res: ServerResponse) => {
-        if (!isLoopback(req)) {
+        if (!isTrustedRequest(req, 'POST')) {
           writeJson(res, 403, { error: 'forbidden' });
           return;
         }
@@ -192,7 +226,7 @@ export function apply(ctx: Context, config: any) {
       kind: 'exact',
       path: `${API_PREFIX}/logout`,
       handler: async (req: IncomingMessage, res: ServerResponse) => {
-        if (!isLoopback(req)) {
+        if (!isTrustedRequest(req, 'POST')) {
           writeJson(res, 403, { error: 'forbidden' });
           return;
         }
