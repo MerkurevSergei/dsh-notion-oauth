@@ -49,7 +49,7 @@ const result = await build({
 
 const bundleText = result.outputFiles[0].text;
 const wrapper = `window.__ModuleLoader__.load({
-\tid: "dsh-notion-oauth",
+\tid: "dsh-notion-oauth-ui",
 \tfactory: (require) => {
 \t\tvar module = { exports: {} };
 \t\tvar exports = module.exports;

@@ -1,4 +1,4 @@
-// Browser-half entry for dsh-notion-oauth — runs inside the DSH web GUI.
+// Browser-half entry for dsh-notion-oauth-ui — runs inside the DSH web GUI.
 // Registers the Notion page into the additive `settings.section` list slot.
 import { createElement } from 'react';
 import type { ClientContext } from '@deepseek-ai/dsh-client-runtime/client';

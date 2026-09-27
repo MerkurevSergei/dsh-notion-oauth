@@ -1,6 +1,6 @@
-# dsh-notion-oauth
+# dsh-notion-oauth-ui
 
-通过官方 Notion MCP 服务器，用 OAuth 2.0（授权码 + PKCE）把 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 连接到 [Notion](https://www.notion.com)。
+在 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的图形界面中，用 OAuth 2.0（授权码 + PKCE）连接 [Notion](https://www.notion.com) —— 无需复制 Integration Token，也不必打开终端。页面、数据库与评论均通过官方 Notion MCP 服务器访问。
 
 ## 特性
 
@@ -12,12 +12,12 @@
 
 ## 安装
 
-通过 DSH GUI：设置 → 插件 → 添加插件 → `dsh-notion-oauth`。
+通过 DSH GUI：设置 → 插件 → 添加插件 → `dsh-notion-oauth-ui`。
 
 或通过 CLI：
 
 ```sh
-dsh plugin --profile <name> add dsh-notion-oauth
+dsh plugin --profile <name> add dsh-notion-oauth-ui
 ```
 
 ## 使用
@@ -37,7 +37,7 @@ dsh plugin --profile <name> add dsh-notion-oauth
 
 ## 安全
 
-- **仅限回环的控制路由。** 设置页通过 `/api/dsh-notion-oauth/{status,login,logout}` 通信。每个路由固定一种 HTTP 方法（`GET /status`、`POST /login`、`POST /logout`），并且只接受远端地址与 `Host` 均为回环、且非 `Sec-Fetch-Site: cross-site` 的请求。当请求携带 `Origin` 时，它必须是应用自身（`dsh-app://app`）或同源主机。Desktop 外壳会代理渲染进程的请求并**剥离** `Origin` 与 `Sec-Fetch-Site`，因此 `Origin` 缺失属于正常情况；两个 POST 路由因此额外要求 `Content-Type: application/json` —— 它不属于 CORS 简单值，跨站调用方必须先通过被本路由拒绝的预检请求。
+- **仅限回环的控制路由。** 设置页通过 `/api/dsh-notion-oauth-ui/{status,login,logout}` 通信。每个路由固定一种 HTTP 方法（`GET /status`、`POST /login`、`POST /logout`），并且只接受远端地址与 `Host` 均为回环、且非 `Sec-Fetch-Site: cross-site` 的请求。当请求携带 `Origin` 时，它必须是应用自身（`dsh-app://app`）或同源主机。Desktop 外壳会代理渲染进程的请求并**剥离** `Origin` 与 `Sec-Fetch-Site`，因此 `Origin` 缺失属于正常情况；两个 POST 路由因此额外要求 `Content-Type: application/json` —— 它不属于 CORS 简单值，跨站调用方必须先通过被本路由拒绝的预检请求。
 - **OAuth 加固。** 授权码 + PKCE（S256）、每次流程独立的 `state`（由回调服务器校验），以及 10 分钟的回调截止时间。格式错误或伪造的回调返回 400，**不会**中断正在等待的登录。
 - **传输。** `mcpUrl` 必须是 `https://`，否则插件拒绝加载。发现端点（授权、令牌、注册）取自 `mcpUrl` 资源所声明的地址，因此请保持其来源可信。
 - **静态令牌。** access/refresh token 以单条记录存放在 DSH 凭据层（`NOTION_OAUTH`）。该存储的私密性仅等同于你的操作系统用户账户：工具进程以同一用户运行，因此任何拥有凭据访问权的插件都能读取**所有**已存密钥（`NOTION_OAUTH`、`DEEPSEEK_API_KEY` 等），而不只是自己的。令牌不会暴露给浏览器端、不会由任何 HTTP 路由返回，也不会写入日志。

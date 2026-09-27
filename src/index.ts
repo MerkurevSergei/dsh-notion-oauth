@@ -1,4 +1,4 @@
-// dsh-notion-oauth — host half. OAuth login (GUI route + CLI command), token
+// dsh-notion-oauth-ui — host half. OAuth login (GUI route + CLI command), token
 // storage via DSH credentials, and mounting the Notion MCP client.
 
 import type { Context } from '@deepseek-ai/cordis';
@@ -33,7 +33,7 @@ export const Config = z.object({
   refreshRetryMs: z.number().default(60 * 1000),
 });
 
-const API_PREFIX = '/api/dsh-notion-oauth';
+const API_PREFIX = '/api/dsh-notion-oauth-ui';
 
 interface PendingLogin {
   endpoints: OAuthEndpoints;
@@ -48,7 +48,7 @@ export function apply(ctx: Context, config: any) {
   // Fail closed on a non-TLS MCP endpoint: OAuth discovery trusts whatever the
   // resource advertises, so a plaintext or unexpected origin is never accepted.
   if (!/^https:\/\//i.test(config.mcpUrl)) {
-    throw new Error(`dsh-notion-oauth: mcpUrl must be an https:// URL (got "${config.mcpUrl}")`);
+    throw new Error(`dsh-notion-oauth-ui: mcpUrl must be an https:// URL (got "${config.mcpUrl}")`);
   }
 
   const slot: { child?: { dispose(): void } } = {};
@@ -97,7 +97,7 @@ export function apply(ctx: Context, config: any) {
       // refreshAndMount re-arms the next refresh via mountAndSchedule.
       await refreshAndMount();
     } catch (e) {
-      console.error('[dsh-notion-oauth] refresh failed:', e);
+      console.error('[dsh-notion-oauth-ui] refresh failed:', e);
       // invalid_grant already cleared the store and unmounted; otherwise retry.
       if (await store.load()) armRefresh(config.refreshRetryMs);
     }
@@ -205,7 +205,7 @@ export function apply(ctx: Context, config: any) {
             if (activeLoginClose === close) activeLoginClose = undefined;
             if (pending === myPending) pending = undefined;
           });
-        done.catch((e) => console.error('[dsh-notion-oauth] login failed:', e));
+        done.catch((e) => console.error('[dsh-notion-oauth-ui] login failed:', e));
         return { url, done };
       } catch (e) {
         // Registration failed after the callback server started: release it.
@@ -346,9 +346,9 @@ export function apply(ctx: Context, config: any) {
       .action(async () => {
         try {
           const { url, done } = await beginLogin();
-          console.log(`[dsh-notion-oauth] open this URL to authorize Notion:\n${url}`);
+          console.log(`[dsh-notion-oauth-ui] open this URL to authorize Notion:\n${url}`);
           await done;
-          console.log('[dsh-notion-oauth] connected');
+          console.log('[dsh-notion-oauth-ui] connected');
           ctx.appExit?.(0);
         } catch (e) {
           console.error(e);
@@ -367,7 +367,7 @@ export function apply(ctx: Context, config: any) {
           }
           await store.clear();
           unmount();
-          console.log('[dsh-notion-oauth] disconnected');
+          console.log('[dsh-notion-oauth-ui] disconnected');
           ctx.appExit?.(0);
         } catch (e) {
           console.error(e);
@@ -406,7 +406,7 @@ export function apply(ctx: Context, config: any) {
           await refreshAndMount();
         }
       } catch (e) {
-        console.error('[dsh-notion-oauth] startup error:', e);
+        console.error('[dsh-notion-oauth-ui] startup error:', e);
         // A transient discovery/refresh failure still leaves valid tokens: retry.
         if (await store.load()) armRefresh(config.refreshRetryMs);
       }

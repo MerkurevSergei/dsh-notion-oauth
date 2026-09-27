@@ -1,6 +1,6 @@
-# dsh-notion-oauth
+# dsh-notion-oauth-ui
 
-Notion integration for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) via the official Notion MCP server with OAuth 2.0 (authorization code + PKCE).
+Connect Notion from the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) GUI with OAuth 2.0 (authorization code + PKCE) — no Integration Token to copy, and no terminal required. Pages, databases and comments are reached through the official Notion MCP server.
 
 ## Features
 
@@ -12,12 +12,12 @@ Notion integration for [DeepSeek Harness](https://github.com/deepseek-ai/deepsee
 
 ## Install
 
-Via the DSH GUI: Settings → Plugins → Add plugin → `dsh-notion-oauth`.
+Via the DSH GUI: Settings → Plugins → Add plugin → `dsh-notion-oauth-ui`.
 
 Or via CLI:
 
 ```sh
-dsh plugin --profile <name> add dsh-notion-oauth
+dsh plugin --profile <name> add dsh-notion-oauth-ui
 ```
 
 ## Usage
@@ -38,7 +38,7 @@ dsh plugin --profile <name> add dsh-notion-oauth
 ## Security
 
 - **Loopback-only control routes.** The Settings page talks to
-  `/api/dsh-notion-oauth/{status,login,logout}`. Each route is pinned to one HTTP
+  `/api/dsh-notion-oauth-ui/{status,login,logout}`. Each route is pinned to one HTTP
   method (`GET /status`, `POST /login`, `POST /logout`) and accepts only requests
   whose remote address and `Host` are loopback and that are not `Sec-Fetch-Site:
   cross-site`. When an `Origin` is present it must be the app itself

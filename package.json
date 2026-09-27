@@ -1,17 +1,17 @@
 {
-  "name": "dsh-notion-oauth",
-  "version": "1.0.1",
-  "description": "Connect Notion through the official Notion MCP with OAuth 2.0 + PKCE — sign in from the GUI.",
+  "name": "dsh-notion-oauth-ui",
+  "version": "1.0.0",
+  "description": "Connect Notion from the GUI with OAuth 2.0 + PKCE — official Notion MCP, no integration token.",
   "icon": "./icon.svg",
   "type": "module",
   "license": "MIT",
   "author": "Merkurev Sergei <merkurevsn@gmail.com> (https://github.com/MerkurevSergei)",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MerkurevSergei/dsh-notion-oauth.git"
+    "url": "git+https://github.com/MerkurevSergei/dsh-notion-oauth-ui.git"
   },
-  "homepage": "https://github.com/MerkurevSergei/dsh-notion-oauth#readme",
-  "bugs": { "url": "https://github.com/MerkurevSergei/dsh-notion-oauth/issues" },
+  "homepage": "https://github.com/MerkurevSergei/dsh-notion-oauth-ui#readme",
+  "bugs": { "url": "https://github.com/MerkurevSergei/dsh-notion-oauth-ui/issues" },
   "engines": { "node": ">=22.12.0", "dsh": ">=0.1.5-rc.3" },
   "packageManager": "pnpm@11.7.0",
   "main": "lib/index.js",
@@ -44,7 +44,7 @@
     "esbuild": "^0.25.0",
     "typescript": "^5.6.0"
   },
-  "keywords": ["dsh", "dsh-plugin", "notion", "mcp", "oauth", "deepseek-harness"]
+  "keywords": ["dsh", "dsh-plugin", "notion", "mcp", "oauth", "gui", "ui", "deepseek-harness"]
 }
 
 

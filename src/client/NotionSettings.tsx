@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 
-const API = '/api/dsh-notion-oauth';
+const API = '/api/dsh-notion-oauth-ui';
 const POLL_MS = 4000;
 
 interface Status {

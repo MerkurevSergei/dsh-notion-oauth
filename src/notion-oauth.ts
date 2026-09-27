@@ -6,7 +6,7 @@ import { createHash, randomBytes } from 'node:crypto';
 
 declare const __PKG_VERSION__: string;
 
-const UA = `dsh-notion-oauth/${__PKG_VERSION__}`;
+const UA = `dsh-notion-oauth-ui/${__PKG_VERSION__}`;
 
 function withUA(init: RequestInit = {}): RequestInit {
   const headers = new Headers(init.headers);
@@ -76,7 +76,7 @@ export async function registerClient(registrationEndpoint: string, redirectUris:
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      client_name: 'dsh-notion-oauth',
+      client_name: 'dsh-notion-oauth-ui',
       redirect_uris: redirectUris,
       token_endpoint_auth_method: 'none',
       grant_types: ['authorization_code', 'refresh_token'],
