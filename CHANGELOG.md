@@ -1,9 +1,14 @@
 # Changelog
 
-## 1.0.2
+## 1.0.3
 
-- A visual setup guide in the README (both languages) with screenshots, plus a
-  `screenshots.json` so storefronts show them in the plugin card. No code changes.
+- A visual setup guide in the README (English and Chinese): one screenshot per action,
+  showing where **Plugins** and **Settings** live in the sidebar and which checkbox the
+  Notion consent page needs.
+- A `screenshots.json` so storefronts show the same images in the plugin card.
+- The feature list now leads with the GUI login and the OAuth flow.
+
+No code changes.
 
 ## 1.0.0
 
