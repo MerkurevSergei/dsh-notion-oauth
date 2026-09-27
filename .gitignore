@@ -4,3 +4,8 @@ lib/
 package.json.bak
 *.log
 .DS_Store
+
+# IDE / editor project files
+.idea/
+.vscode/
+*.iml
