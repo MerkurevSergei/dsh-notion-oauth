@@ -1,0 +1,63 @@
+name: Publish
+
+# Publishes to npm through Trusted Publishing: nothing secret is stored in the
+# repository or in GitHub secrets. npm trusts this repository + workflow via
+# OIDC and issues a short-lived publish credential, and the published version
+# carries a provenance attestation.
+#
+# One-time setup on npmjs.com — package page → Settings → Trusted Publisher:
+#   Publisher:          GitHub Actions
+#   Organization/user:  MerkurevSergei
+#   Repository:         dsh-notion-oauth
+#   Workflow filename:  publish.yml
+#   Environment:        (leave empty)
+#
+# After that, releasing = bump the version, push, and publish a GitHub Release
+# with the matching tag (vX.Y.Z).
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # the OIDC token npm exchanges for a publish credential
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Version comes from package.json's `packageManager` field.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          cache: pnpm
+
+      # Trusted Publishing needs npm >= 11.5.1.
+      - run: npm install -g npm@latest
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm run build
+
+      - name: Verify build output
+        run: test -f lib/index.js && test -f lib/client.js
+
+      - name: Check the release tag matches package.json
+        if: github.event_name == 'release'
+        run: |
+          expected="v$(node -p "require('./package.json').version")"
+          actual="${{ github.event.release.tag_name }}"
+          if [ "$expected" != "$actual" ]; then
+            echo "Release tag $actual does not match package.json ($expected)"
+            exit 1
+          fi
+
+      - name: Publish
+        run: npm publish
