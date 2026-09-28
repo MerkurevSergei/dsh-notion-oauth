@@ -59,4 +59,9 @@ dsh notion login
 
 ## 许可证
 
-MIT。复用了 `dsh-notion-mcp` 与 `dsh-notion-connector`（均为 MIT）的代码与设计模式。
+MIT —— 见 [LICENSE](LICENSE)。
+
+复用了两个以 MIT 许可的 Notion 插件的代码与设计模式：
+
+- [`mingzeng21/dsh-notion`](https://github.com/mingzeng21/dsh-notion)（npm 包名 `dsh-notion-mcp`）—— Copyright (c) 2026 mingzeng
+- [`zhengjy01/dsh-notion-connector`](https://github.com/zhengjy01/dsh-notion-connector) —— 其 package.json 声明为 MIT
