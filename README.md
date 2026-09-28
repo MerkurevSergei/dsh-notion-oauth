@@ -94,4 +94,9 @@ build itself has no such dependency.
 
 ## License
 
-MIT. Reuses code/patterns from `dsh-notion-mcp` and `dsh-notion-connector` (both MIT).
+MIT — see [LICENSE](LICENSE).
+
+Reuses code and design patterns from two MIT-licensed Notion plugins:
+
+- [`mingzeng21/dsh-notion`](https://github.com/mingzeng21/dsh-notion) (published as `dsh-notion-mcp`) — Copyright (c) 2026 mingzeng
+- [`zhengjy01/dsh-notion-connector`](https://github.com/zhengjy01/dsh-notion-connector) — MIT per its package.json
